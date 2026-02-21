@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Client.Wasm.csproj.user" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Blazorise" Version="1.8.8" />
     <PackageReference Include="Blazorise.Bootstrap" Version="1.8.8" />
 	  <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.8.8" />
