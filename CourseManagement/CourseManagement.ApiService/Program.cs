@@ -2,19 +2,19 @@ using CourseManagement.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add service defaults & Aspire client integrations.
+// Add service defaults
 builder.AddServiceDefaults();
 
 // Redis
 builder.AddRedisDistributedCache("course-cache");
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-
-// Controllers
 builder.Services.AddControllers();
+builder.Services.AddSingleton<CourseGenerator>();
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowClient", policy =>
@@ -25,15 +25,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Ass course generator
-builder.Services.AddSingleton<CourseGenerator>();
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 app.UseExceptionHandler();
 app.UseCors("AllowClient");
 
+// Mapping
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

@@ -1,5 +1,5 @@
 ﻿using Bogus;
-using CourseManagement.ApiService.Models;
+using CourseManagement.ApiService.DTO;
 
 namespace CourseManagement.ApiService.Services;
 
@@ -11,7 +11,7 @@ public class CourseGenerator
     /// <summary>
     /// Экземпляр генератора данных
     /// </summary>
-    private readonly Faker<Course> _courseFaker;
+    private readonly Faker<CourseDto> _courseFaker;
 
     /// <summary>
     /// Шаблоны курсов
@@ -103,12 +103,12 @@ public class CourseGenerator
     /// </summary>
     public CourseGenerator()
     {
-        _courseFaker = new Faker<Course>("ru")
+        _courseFaker = new Faker<CourseDto>("ru")
             .CustomInstantiator(f =>
             {
                 var template = f.PickRandom(_courseTemplates);
 
-                return new Course
+                return new CourseDto
                 {
                     Title = template.Title,
                     Description = template.Description,
@@ -141,7 +141,7 @@ public class CourseGenerator
     /// </summary>
     /// <param name="id">Идентификатор курса</param>
     /// <returns>Курс</returns>
-    public Course GenerateOne(int? id = null)
+    public CourseDto GenerateOne(int? id = null)
     {
         var course = _courseFaker.Generate();
         course.Id = id ?? new Randomizer().Int(1, 100000);
@@ -153,9 +153,24 @@ public class CourseGenerator
     /// </summary>
     private class CourseTemplate
     {
+        /// <summary>
+        /// Название курса
+        /// </summary>
         public string Title { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Описание курса
+        /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Кафедра
+        /// </summary>
         public string Department { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Факультет
+        /// </summary>
         public string Faculty { get; set; } = string.Empty;
     }
 }

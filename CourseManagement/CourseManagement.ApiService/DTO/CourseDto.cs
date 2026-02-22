@@ -1,10 +1,10 @@
-﻿namespace CourseManagement.ApiService.Models;
+﻿namespace CourseManagement.ApiService.DTO;
 
 
 /// <summary>
-/// Контракт для сущности типа курс
+/// DTO для сущности типа курс
 /// </summary>
-public class Course
+public class CourseDto
 {
     /// <summary>
     /// Идентификатор курса

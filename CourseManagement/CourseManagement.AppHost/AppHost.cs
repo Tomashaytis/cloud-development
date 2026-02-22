@@ -1,7 +1,9 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Redis
-var redis = builder.AddRedis("course-cache");
+var redis = builder.AddRedis("course-cache")
+    .WithRedisCommander(containerName: "redis-commander")
+    .WithDataVolume();
 
 // API service
 var apiService = builder.AddProject<Projects.CourseManagement_ApiService>("course-service")

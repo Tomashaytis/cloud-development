@@ -1,51 +1,93 @@
-﻿using CourseManagement.ApiService.Models;
-using CourseManagement.ApiService.Services;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
+using CourseManagement.ApiService.DTO;
+using CourseManagement.ApiService.Services;
 
 namespace CourseManagement.ApiService.Controllers;
 
+/// <summary>
+/// Контроллер для сущности типа Курс
+/// </summary>
+/// <param name="generator">Генератор курсов</param>
+/// <param name="cache">Кэш</param>
+/// <param name="logger">Логгер</param>
+/// <param name="configuration">Конфигурация</param>
 [ApiController]
 [Route("course-management")]
 public class CourseController(CourseGenerator generator, IDistributedCache cache, ILogger<CourseController> logger, IConfiguration configuration) : ControllerBase
 {
+    /// <summary>
+    /// GET-запрос на генерацию курса
+    /// </summary>
+    /// <param name="id">Идентификатор курса</param>
+    /// <returns>Сгенерированный курс</returns>
     [HttpGet]
-    public async Task<ActionResult<Course>> GetCourse(int? id)
+    public async Task<ActionResult<CourseDto>> GetCourse(int? id)
     {
-        try
+        using (logger.BeginScope(new
         {
-            logger.LogInformation("Request received with id: {Id}", id);
-
-            var cacheKey = $"course:{id ?? 0}";
-            var cachedCourse = await cache.GetStringAsync(cacheKey);
-
-            if (cachedCourse != null)
+            RequestId = Guid.NewGuid(),
+            ResourceType = "Course",
+            ResourceId = id,
+            Operation = "GetCourse"
+        }))
+        {
+            try
             {
-                logger.LogInformation("Course found in cache for id: {Id}", id);
-                var course = JsonSerializer.Deserialize<Course>(cachedCourse);
-                return Ok(course);
+                if (logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("Processing request for course {ResourceId}", id);
+
+                var cacheKey = $"course:{id ?? 0}";
+
+                try
+                {
+                    var cachedCourse = await cache.GetStringAsync(cacheKey);
+                    if (cachedCourse != null)
+                    {
+                        var course = JsonSerializer.Deserialize<CourseDto>(cachedCourse);
+
+                        if (logger.IsEnabled(LogLevel.Information))
+                            logger.LogInformation("Cache hit for course {ResourceId}. Course data: {@Course}", id, course);
+
+                        return Ok(course);
+                    }
+
+                    if (logger.IsEnabled(LogLevel.Information))
+                        logger.LogInformation("Cache miss for course {ResourceId}, generating new", id);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Сache is unavailable");
+                }
+
+                var newCourse = generator.GenerateOne(id);
+
+                var cacheDuration = configuration.GetValue<double?>("Cache:DurationMinutes") ?? 5;
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(cacheDuration)
+                };
+
+                try
+                {
+                    var serializedCourse = JsonSerializer.Serialize(newCourse);
+                    await cache.SetStringAsync(cacheKey, serializedCourse, options);
+                    if (logger.IsEnabled(LogLevel.Information))
+                        logger.LogInformation("Course {ResourceId} generated and cached. Course details: {@Course}", id, newCourse);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Сache is unavailable");
+                }
+
+                return Ok(newCourse);
             }
-
-            logger.LogInformation("Course not in cache, generating new for id: {Id}", id);
-            var newCourse = generator.GenerateOne(id);
-
-            var cacheDuration = configuration.GetValue<double?>("Cache:DurationMinutes") ?? 5;
-            var options = new DistributedCacheEntryOptions
+            catch (Exception ex)
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(cacheDuration)
-            };
-
-            var serializedCourse = JsonSerializer.Serialize(newCourse);
-            await cache.SetStringAsync(cacheKey, serializedCourse, options);
-
-            logger.LogInformation("The course was successfully generated for id: {Id}", id);
-            return Ok(newCourse);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error during course generation");
-            return Problem("Internal server error", statusCode: 500);
+                logger.LogError(ex, "Error processing course {ResourceId}", id);
+                return Problem("Internal server error", statusCode: 500);
+            }
         }
     }
 }
