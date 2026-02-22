@@ -28,13 +28,13 @@ public class CacheService<T>(IDistributedCache cache, ILogger<CacheService<T>> l
                 var obj = JsonSerializer.Deserialize<T>(cached);
 
                 if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("Cache hit for object {ResourceId}. Object data: {@Object}", id, obj);
+                    logger.LogInformation("Cache hit for object {ResourceId}", id);
 
                 return obj;
             }
 
             if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Cache miss for object {ResourceId}, generating new", id);
+                logger.LogInformation("Cache miss for object {ResourceId}", id);
         }
         catch (Exception ex)
         {
@@ -65,7 +65,7 @@ public class CacheService<T>(IDistributedCache cache, ILogger<CacheService<T>> l
             var serialized = JsonSerializer.Serialize(obj);
             await cache.SetStringAsync(cacheKey, serialized, options);
             if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Object {ResourceId} cached. Object details: {@Object}", id, obj);
+                logger.LogInformation("Object {ResourceId} cached", id);
         }
         catch (Exception ex)
         {

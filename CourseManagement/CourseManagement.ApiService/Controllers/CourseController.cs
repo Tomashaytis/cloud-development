@@ -21,17 +21,11 @@ public class CourseController(ILogger<CourseController> logger, CourseService co
     [HttpGet]
     public async Task<ActionResult<CourseDto>> GetCourse(int? id)
     {
-        using (logger.BeginScope(new
-        {
-            RequestId = Guid.NewGuid(),
-            ResourceType = "Course",
-            ResourceId = id,
-            Operation = "GetCourse"
-        }))
-        {
-            var course = await courseService.GetCourse(id ?? 0);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Processing request for course {ResourceId}", id);
 
-            return course != null ? Ok(course) : Problem("Internal server error", statusCode: 500);
-        }
+        var course = await courseService.GetCourse(id ?? 0);
+
+        return course != null ? Ok(course) : Problem("Internal server error", statusCode: 500);
     }
 }

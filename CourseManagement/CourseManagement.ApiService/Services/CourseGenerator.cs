@@ -6,17 +6,13 @@ namespace CourseManagement.ApiService.Services;
 /// <summary>
 /// Генератор для сущности типа Курс
 /// </summary>
-public class CourseGenerator
+/// <param name="logger">Логгер</param>
+public class CourseGenerator(ILogger<CourseGenerator> logger)
 {
-    /// <summary>
-    /// Экземпляр генератора данных
-    /// </summary>
-    private readonly Faker<CourseDto> _courseFaker;
-
     /// <summary>
     /// Список названий курсов
     /// </summary>
-    private readonly string[] _courseTitles = {
+    private static readonly string[] _courseTitles = {
         "Разработка корпоративных приложений",
         "Алгоритмы и структуры данных",
         "Базы данных",
@@ -55,11 +51,9 @@ public class CourseGenerator
     };
 
     /// <summary>
-    /// Конструктор для генератора
+    /// Экземпляр генератора данных
     /// </summary>
-    public CourseGenerator()
-    {
-        _courseFaker = new Faker<CourseDto>("ru")
+    private readonly Faker<CourseDto> _courseFaker = new Faker<CourseDto>("ru")
             .RuleFor(c => c.Title, f => f.PickRandom(_courseTitles))
             .RuleFor(c => c.Lector, f => f.Name.FullName())
             .RuleFor(c => c.StartDate, f => DateOnly.FromDateTime(f.Date.Future(1)))
@@ -69,7 +63,6 @@ public class CourseGenerator
             .RuleFor(c => c.HasSertificate, f => f.Random.Bool())
             .RuleFor(c => c.Price, f => f.Finance.Amount(5000, 100000, 2))
             .RuleFor(c => c.Rating, f => f.Random.Int(1, 5));
-    }
 
     /// <summary>
     /// Метод для генерации одного экземпляра сущности типа Курс 
@@ -80,6 +73,10 @@ public class CourseGenerator
     {
         var course = _courseFaker.Generate();
         course.Id = id ?? new Randomizer().Int(1, 100000);
+
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("Course {ResourceId} generated", id);
+
         return course;
     }
 }

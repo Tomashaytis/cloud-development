@@ -12,6 +12,11 @@ namespace CourseManagement.ApiService.Services;
 public class CourseService(CourseGenerator generator, ILogger<CourseService> logger, IConfiguration configuration, CacheService<CourseDto> cacheService)
 {
     /// <summary>
+    /// Константа для ключа кэша
+    /// </summary>
+    private const string CacheKeyPrefix = "course";
+
+    /// <summary>
     /// Метод для получения курса
     /// </summary>
     /// <param name="id">Идентификатор курса</param>
@@ -20,21 +25,15 @@ public class CourseService(CourseGenerator generator, ILogger<CourseService> log
     {
         try
         {
-            if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Processing request for course {ResourceId}", id);
-
-            var course = await cacheService.FetchAsync("course", id);
+            var course = await cacheService.FetchAsync(CacheKeyPrefix, id);
             if (course != null)
                 return course;
 
             var newCourse = generator.GenerateOne(id);
 
-            if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Course {ResourceId} generated", id);
-
             var cacheDuration = configuration.GetValue<double?>("Cache:DurationMinutes") ?? 5;
 
-            await cacheService.StoreAsync("course", id, newCourse, cacheDuration);
+            await cacheService.StoreAsync(CacheKeyPrefix, id, newCourse, cacheDuration);
 
             return newCourse;
         }
