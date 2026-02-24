@@ -11,6 +11,11 @@ namespace CourseManagement.ApiService.Services;
 public class CacheService<T>(IDistributedCache cache, ILogger<CacheService<T>> logger)
 {
     /// <summary>
+    /// Время жизни данных в кэше
+    /// </summary>
+    private static readonly double _cacheDuration = 5;
+
+    /// <summary>
     /// Асинхронный метод для извлечения данных из кэша
     /// </summary>
     /// <param name="key">Ключ для сущности</param>
@@ -27,14 +32,12 @@ public class CacheService<T>(IDistributedCache cache, ILogger<CacheService<T>> l
             {
                 var obj = JsonSerializer.Deserialize<T>(cached);
 
-                if (logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("Cache hit for object {ResourceId}", id);
+                logger.LogInformation("Cache hit for object {ResourceId}", id);
 
                 return obj;
             }
 
-            if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Cache miss for object {ResourceId}", id);
+            logger.LogInformation("Cache miss for object {ResourceId}", id);
         }
         catch (Exception ex)
         {
@@ -50,22 +53,20 @@ public class CacheService<T>(IDistributedCache cache, ILogger<CacheService<T>> l
     /// <param name="key">Ключ для сущности</param>
     /// <param name="id">Идентификатор объекта</param>
     /// <param name="obj">Объект</param>
-    /// <param name="cacheDuration">Время жизни данных в кэше</param>
-    public async Task StoreAsync(string key, int id, T obj, double cacheDuration)
+    public async Task StoreAsync(string key, int id, T obj)
     {
         var cacheKey = $"{key}:{id}";
 
         var options = new DistributedCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(cacheDuration)
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_cacheDuration)
         };
 
         try
         {
             var serialized = JsonSerializer.Serialize(obj);
             await cache.SetStringAsync(cacheKey, serialized, options);
-            if (logger.IsEnabled(LogLevel.Information))
-                logger.LogInformation("Object {ResourceId} cached", id);
+            logger.LogInformation("Object {ResourceId} cached", id);
         }
         catch (Exception ex)
         {

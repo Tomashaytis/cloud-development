@@ -7,9 +7,8 @@ namespace CourseManagement.ApiService.Services;
 /// </summary>
 /// <param name="generator">Генератор курсов</param>
 /// <param name="logger">Логгер</param>
-/// <param name="configuration">Конфигурация</param>
 /// <param name="cacheService">Сервис для взаимодействия с кэшем</param>
-public class CourseService(CourseGenerator generator, ILogger<CourseService> logger, IConfiguration configuration, CacheService<CourseDto> cacheService)
+public class CourseService(CourseGenerator generator, ILogger<CourseService> logger, CacheService<CourseDto> cacheService)
 {
     /// <summary>
     /// Константа для ключа кэша
@@ -31,9 +30,7 @@ public class CourseService(CourseGenerator generator, ILogger<CourseService> log
 
             var newCourse = generator.GenerateOne(id);
 
-            var cacheDuration = configuration.GetValue<double?>("Cache:DurationMinutes") ?? 5;
-
-            await cacheService.StoreAsync(CacheKeyPrefix, id, newCourse, cacheDuration);
+            await cacheService.StoreAsync(CacheKeyPrefix, id, newCourse);
 
             return newCourse;
         }

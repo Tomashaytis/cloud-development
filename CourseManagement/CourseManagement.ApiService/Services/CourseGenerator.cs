@@ -74,8 +74,7 @@ public class CourseGenerator(ILogger<CourseGenerator> logger)
         var course = _courseFaker.Generate();
         course.Id = id ?? new Randomizer().Int(1, 100000);
 
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation("Course {ResourceId} generated", id);
+        logger.LogInformation("Course {ResourceId} generated", id);
 
         return course;
     }

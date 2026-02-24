@@ -21,8 +21,7 @@ public class CourseController(ILogger<CourseController> logger, CourseService co
     [HttpGet]
     public async Task<ActionResult<CourseDto>> GetCourse(int? id)
     {
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation("Processing request for course {ResourceId}", id);
+        logger.LogInformation("Processing request for course {ResourceId}", id);
 
         var course = await courseService.GetCourse(id ?? 0);
 
